@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PV Suitability – Adana (Prototype)</title>
+
+  <!-- Leaflet -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Leaflet Draw -->
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css"
+  />
+  <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+  <!-- Turf.js for geometry (area/intersection) -->
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+
+  <style>
+    body { margin: 0; font-family: Arial, sans-serif; }
+    #wrap { display: grid; grid-template-columns: 360px 1fr; height: 100vh; }
+    #panel { padding: 14px; border-right: 1px solid #ddd; overflow:auto; }
+    #map { height: 100vh; }
+    h2 { margin: 0 0 10px 0; font-size: 18px; }
+    .box { border: 1px solid #eee; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    label { display:block; font-size: 12px; margin: 8px 0 4px; color:#333; }
+    select, input { width: 100%; padding: 8px; border-radius: 8px; border: 1px solid #ccc; }
+    .row { display:flex; gap:10px; }
+    .row > div { flex:1; }
+    .kpi { font-size: 13px; line-height: 1.55; }
+    .kpi b { font-size: 14px; }
+    .muted { color:#666; font-size:12px; }
+    button { width:100%; padding:10px; border:0; border-radius:10px; background:#111; color:#fff; cursor:pointer; }
+    button:hover { background:#222; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid #ddd; margin-right:6px; }
+  </style>
+</head>
+
+<body>
+  <div id="wrap">
+    <div id="panel">
+      <h2>PV Suitability – Adana</h2>
+      <div class="muted">
+        Prototype: draw a polygon on the map, select parameters, and estimate annual PV energy.
+      </div>
+
+      <div class="box">
+        <label>1) Panel Technology</label>
+        <select id="panelTech"></select>
+
+        <div class="row">
+          <div>
+            <label>PR (Performance Ratio)</label>
+            <input id="pr" type="number" step="0.01" min="0" max="1" value="0.80" />
+          </div>
+          <div>
+            <label>Coverage (%)</label>
+            <input id="coverage" type="number" step="1" min="0" max="100" value="10" />
+          </div>
+        </div>
+
+        <label>2) Which suitability class to use?</label>
+        <select id="classPick">
+          <option value="HS">Highly suitable only</option>
+          <option value="MS">Moderately suitable only</option>
+          <option value="HS_MS">Highly + Moderately</option>
+        </select>
+
+        <label>Assumptions (editable)</label>
+        <div class="row">
+          <div>
+            <label>Household demand (kWh/yr)</label>
+            <input id="hh" type="number" step="100" min="500" value="3000" />
+          </div>
+          <div>
+            <label>Grid EF (kgCO₂/kWh)</label>
+            <input id="ef" type="number" step="0.01" min="0" value="0.45" />
+          </div>
+        </div>
+
+        <div class="muted" style="margin-top:8px">
+          Energy = SR × Area × η × PR. SR is mean annual solar radiation (kWh/m²/year).
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="kpi">
+          <div><span class="pill">Draw</span> Use the polygon tool on the map (left toolbar).</div>
+          <div><span class="pill">Click</span> Then click <b>Recalculate</b>.</div>
+        </div>
+        <button id="recalc">Recalculate</button>
+      </div>
+
+      <div class="box">
+        <div class="kpi" id="results">
+          <b>Results will appear here.</b><br/>
+          <span class="muted">Tip: draw a polygon that overlaps the colored suitable zones.</span>
+        </div>
+      </div>
+
+      <div class="box">
+        <div class="muted">
+          Data layer shown is dummy for testing. Replace it with your real “suitable_areas.geojson”
+          containing: <b>class</b> (HS/MS), <b>sr_mean</b> (kWh/m²/yr).
+        </div>
+      </div>
+    </div>
+
+    <div id="map"></div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
