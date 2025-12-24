@@ -5,15 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title>PV Suitability – Adana (Prototype)</title>
 
-  <!-- Leaflet -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- Leaflet.draw -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
   <script src="https://unpkg.com/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
-  <!-- Turf (area calc) -->
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <style>
@@ -21,37 +18,21 @@
     header{padding:18px 20px;border-bottom:1px solid rgba(255,255,255,.08);}
     h1{margin:0;font-size:22px}
     .sub{opacity:.8;margin-top:6px;font-size:13px;line-height:1.3}
-
     .wrap{display:flex;gap:14px;padding:14px;height:calc(100vh - 86px);box-sizing:border-box;}
-    .panel{width:380px;min-width:320px;max-width:420px;background:#121a2a;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;overflow:auto;}
+    .panel{width:360px;min-width:320px;background:#121a2a;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:14px;overflow:auto;}
     .map{flex:1;background:#121a2a;border:1px solid rgba(255,255,255,.08);border-radius:14px;overflow:hidden;position:relative;}
     #map{position:absolute;inset:0;}
-
     .card{background:#0f1626;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:12px;margin-bottom:12px;}
     .card h3{margin:0 0 10px 0;font-size:14px;opacity:.9}
     label{display:block;font-size:12px;opacity:.85;margin:10px 0 6px}
-    input,select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b1220;color:#e9eef8;outline:none;}
-    .row{display:flex;gap:10px}
-    .row > div{flex:1}
-    .muted{opacity:.75;font-size:12px;line-height:1.35}
-    .btnrow{display:flex;gap:10px}
-    button{
-      flex:1; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.15);
-      background:#1b2a44; color:#e9eef8; cursor:pointer;
-    }
-    button:hover{filter:brightness(1.05)}
+    select{width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.12);background:#0b1220;color:#e9eef8;outline:none;}
     .kpi{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-    .kpi .box{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px}
-    .kpi .big{font-size:18px;font-weight:700;margin-top:6px}
-    .pill{display:inline-block;padding:4px 8px;border-radius:999px;background:rgba(255,255,255,.08);font-size:11px;opacity:.9}
-    .warn{color:#ffd18b}
-    .ok{color:#98ffb3}
-
-    @media (max-width: 980px){
-      .wrap{flex-direction:column;}
-      .panel{width:100%;max-width:none}
-      .map{height:55vh}
-    }
+    .box{background:#0b1220;border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px}
+    .muted{opacity:.75;font-size:12px;line-height:1.35}
+    .big{font-size:18px;font-weight:700;margin-top:6px}
+    button{width:100%; padding:10px; border-radius:10px; border:1px solid rgba(255,255,255,.15);
+      background:#1b2a44; color:#e9eef8; cursor:pointer;}
+    button:hover{filter:brightness(1.05)}
   </style>
 </head>
 
@@ -59,17 +40,16 @@
 <header>
   <h1>PV Suitability & Energy Potential – Adana (Prototype)</h1>
   <div class="sub">
-    Draw a polygon on the map, choose PV technology and parameters, then estimate annual energy, households served, and avoided CO₂.
-    (Dummy test values included; replace later with GIS outputs.)
+    Select a suitability class, then draw a polygon <b>inside the highlighted area</b>. The system rejects polygons outside the suitable zone.
   </div>
 </header>
 
 <div class="wrap">
   <div class="panel">
-
     <div class="card">
-      <h3>1) PV Technology</h3>
-      <label for="panelTech">Panel type (efficiency)</label>
+      <h3>Inputs</h3>
+
+      <label for="panelTech">PV Technology (efficiency)</label>
       <select id="panelTech">
         <option value="0.131">c-Si (13.1%)</option>
         <option value="0.079">a-Si (7.9%)</option>
@@ -78,128 +58,52 @@
         <option value="0.263">CPV (26.3%)</option>
       </select>
 
-      <div class="row">
-        <div>
-          <label for="pr">Performance Ratio (PR)</label>
-          <input id="pr" type="number" step="0.01" min="0" max="1" value="0.75" />
-        </div>
-        <div>
-          <label for="ef">Grid EF (kgCO₂/kWh)</label>
-          <input id="ef" type="number" step="0.01" min="0" value="0.45" />
-        </div>
-      </div>
-
-      <label for="hh">Household demand (kWh/year)</label>
-      <input id="hh" type="number" step="50" min="0" value="2400" />
-      <div class="muted">PR is usually ~0.70–0.85. EF and household demand are assumptions; we’ll justify later in report.</div>
-    </div>
-
-    <div class="card">
-      <h3>2) Suitability scenario</h3>
-      <label for="suitSel">Which suitability class will be used?</label>
+      <label for="suitSel">Suitability class</label>
       <select id="suitSel">
-        <option value="high">Highly suitable only</option>
-        <option value="high_mod">Highly + Moderately suitable</option>
+        <option value="high">Highly suitable</option>
+        <option value="mod">Moderately suitable</option>
       </select>
-
-      <label for="coverage">Coverage ratio (0–100%)</label>
-      <input id="coverage" type="range" min="0" max="100" value="10" />
-      <div class="muted">
-        Coverage means: “What % of the available land will actually be covered by PV arrays?” (roads, spacing, slope constraints, etc. reduce coverage)
-      </div>
-      <div style="margin-top:8px"><span class="pill">Coverage: <span id="covLabel">10</span>%</span></div>
-
-      <div class="row">
-        <div>
-          <label for="srHigh">Mean solar radiation (High) kWh/m²/year</label>
-          <input id="srHigh" type="number" step="10" min="0" value="1800" />
-        </div>
-        <div>
-          <label for="srMod">Mean solar radiation (Mod) kWh/m²/year</label>
-          <input id="srMod" type="number" step="10" min="0" value="1700" />
-        </div>
-      </div>
-
-      <div class="muted warn">
-        These SR values are placeholders for testing. Later you will replace them with zonal statistics from your ArcGIS Solar Radiation outputs.
-      </div>
-    </div>
-
-    <div class="card">
-      <h3>3) Area input</h3>
-      <div class="muted">
-        Option A: Draw polygon → we compute its area.<br/>
-        Option B: Use preset “available suitable area” values (temporary for testing).
-      </div>
-
-      <label for="areaMode">Area mode</label>
-      <select id="areaMode">
-        <option value="polygon">Use drawn polygon area</option>
-        <option value="preset">Use preset suitable area (dummy)</option>
-      </select>
-
-      <div class="row">
-        <div>
-          <label for="areaHigh">Preset High area (km²)</label>
-          <input id="areaHigh" type="number" step="1" min="0" value="500" />
-        </div>
-        <div>
-          <label for="areaMod">Preset Mod area (km²)</label>
-          <input id="areaMod" type="number" step="1" min="0" value="900" />
-        </div>
-      </div>
-
-      <div class="btnrow" style="margin-top:10px">
-        <button id="recalc">Recalculate</button>
-        <button id="clearPoly">Clear polygon</button>
-      </div>
 
       <div class="muted" style="margin-top:10px">
-        <b>Formula:</b> Energy (kWh/yr) = SR (kWh/m²/yr) × Area (m²) × Coverage × Efficiency × PR
+        Fixed assumptions (hidden from user): PR, household demand, and grid emission factor.
       </div>
+
+      <button id="clearPoly" style="margin-top:10px">Clear polygon</button>
     </div>
 
     <div class="card">
       <h3>Results</h3>
       <div class="kpi">
         <div class="box">
-          <div class="muted">Used area</div>
-          <div class="big" id="usedArea">—</div>
-          <div class="muted" id="usedAreaNote">—</div>
+          <div class="muted">Polygon area</div>
+          <div class="big" id="areaKpi">—</div>
         </div>
         <div class="box">
-          <div class="muted">Mean SR used</div>
-          <div class="big" id="srUsed">—</div>
+          <div class="muted">Solar radiation used</div>
+          <div class="big" id="srKpi">—</div>
           <div class="muted">kWh/m²/year</div>
         </div>
-
         <div class="box">
           <div class="muted">Annual energy</div>
-          <div class="big" id="energy">—</div>
+          <div class="big" id="energyKpi">—</div>
           <div class="muted">kWh/year</div>
         </div>
         <div class="box">
           <div class="muted">Households served</div>
-          <div class="big" id="homes">—</div>
+          <div class="big" id="homeKpi">—</div>
           <div class="muted">households/year</div>
         </div>
-
         <div class="box" style="grid-column:1 / span 2">
           <div class="muted">Avoided CO₂</div>
-          <div class="big" id="co2">—</div>
+          <div class="big" id="co2Kpi">—</div>
           <div class="muted">kgCO₂/year</div>
         </div>
       </div>
-      <div class="muted" style="margin-top:10px">
-        <span class="pill" id="polyStatus">Polygon: not drawn</span>
-      </div>
+      <div class="muted" style="margin-top:10px" id="statusLine">Polygon: not drawn</div>
     </div>
-
   </div>
 
-  <div class="map">
-    <div id="map"></div>
-  </div>
+  <div class="map"><div id="map"></div></div>
 </div>
 
 <script src="app.js"></script>
